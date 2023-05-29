@@ -3,19 +3,17 @@
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 
-#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUIN_WIRE
   #include "Wire.h"
-#endif
+
 
 namespace nsMPU{
   MPU6050 mpu;
 };
 
 void MyMPU::Init(){
-    #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-        Wire.begin();
-        Wire.setClock(400000); 
-    #endif
+    Wire.begin();
+    Wire.setClock(400000); 
+
 
   nsMPU::mpu.initialize();
   nsMPU::mpu.testConnection();

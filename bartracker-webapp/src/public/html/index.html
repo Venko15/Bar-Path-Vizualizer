@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Path Data</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    .container {
+      margin-top: 50px;
+    }
+    #pathSelect {
+      width: 100%;
+      max-width: 300px;
+      position: relative; /* Set the position to relative */
+      z-index: 2; /* Increase the z-index */
+    }
+    .graph-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 50vh; /* Adjust the height as needed */
+    }
+  </style>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Path Data</h1>
+    <div class="form-group">
+      <label for="pathSelect">Select Path:</label>
+      <select id="pathSelect" class="form-control" onchange="updateGraph()"></select>
+    </div>
+    <div class="graph-container">
+      <div id="pathGraph"></div>
+    </div>
+  </div>
+
+  <script>
+    let pathsData = []; // Variable to store the paths data
+    let selectedPathIndex = 0; // Default selected path index
+
+    // Function to update the graph based on the selected path
+    function updateGraph() {
+      selectedPathIndex = document.getElementById('pathSelect').value;
+      drawGraph();
+    }
+
+    // Function to draw the graph based on the selected path
+    function drawGraph() {
+      const selectedPath = pathsData[selectedPathIndex];
+      const values = selectedPath.values;
+
+      // Prepare data for Plotly
+      const traceData = {
+        x: values.map(coords => coords[0]),
+        y: values.map(coords => coords[1]),
+        z: values.map(coords => coords[2]),
+        mode: 'lines',
+        type: 'scatter3d',
+        name: `Path ${selectedPathIndex + 1}`
+      };
+
+      // Define layout options
+      const layout = {
+        title: 'Path Data',
+        scene: {
+          xaxis: { title: 'X' },
+          yaxis: { title: 'Y' },
+          zaxis: { title: 'Z' }
+        }
+      };
+
+      // Create the 3D graph
+      Plotly.newPlot('pathGraph', [traceData], layout);
+    }
+
+    // Fetch path data from the server
+    function fetchPathData() {
+      fetch('/get_all_readings')
+        .then(response => response.json())
+        .then(data => {
+          pathsData = data.paths;
+
+          // Update the dropdown menu options
+          const pathSelect = document.getElementById('pathSelect');
+          pathSelect.innerHTML = ''; // Clear previous options
+
+          pathsData.forEach((path, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.text = `Path ${index + 1}`;
+            pathSelect.appendChild(option);
+          });
+
+          // Draw the initial graph
+          drawGraph();
+        })
+        .catch(error => console.error(error));
+    }
+
+    // Initial fetch and graph creation
+    fetchPathData();
+  </script>
+</body>
+</html>

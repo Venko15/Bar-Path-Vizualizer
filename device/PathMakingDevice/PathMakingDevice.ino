@@ -1,5 +1,5 @@
 #include "InterfaceMPU.h"
-#include "Configuire.h"
+#include "Configure.h"
 #include "HighPassFilter.h"
 #include "KalmanFilter.h"
 #include <WiFi.h>
@@ -14,8 +14,7 @@ uint8_t btn_prev;
 double  accX, accY, accZ;
 double  posX = 0, posY = 0 , posZ=0;
 double  velX = 0, velY = 0 , velZ = 0;
-double  prevVelX = 0, prevVelY = 0 , prevVelZ = 0;
-double prevAccX = 0, prevAccY = 0, prevAccZ = 0;
+
 const char* ssid = "VIVACOM_NET";
 const char* password = NULL;
 const char* serverName = "http://192.168.1.12:3000/add_reading";
@@ -43,11 +42,6 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.print("Connected to WiFi network with IP Address: ");
-  Serial.println(WiFi.localIP());
- 
-  Serial.println("Timer set to 5 seconds (timerDelay variable), it will take 5 seconds before publishing the first reading.");
 
 
   pinMode(ButtonPin, INPUT_PULLUP);
@@ -55,7 +49,7 @@ void setup() {
   btn_prev = digitalRead(ButtonPin);
 }
 
-double mod(double val){
+double mabs(double val){
   return val<0?val*-1:val;
 }
 
@@ -68,27 +62,8 @@ double posYArr[200];
 double posZArr[200];
 int i = 0; 
 
-void changeTendency(double value, double prevValue, int flag){//flag 0 ->x , 1->y, 2->z
-
-  if(tendency[flag] == 0 && (value - prevValue) > 0){
-    tendency[flag] = 1;
-  }else if(tendency[flag] == 0 && (value - prevValue) < 0){
-    tendency[flag] = -1;
-  }
-  if(mod(value - prevValue) < 0.1){
-    tendency[flag] = 0;
-  }
-}
-
-bool checkAdd(double value, double prevValue, int flag){
-  if( ((value - prevValue) < 0  && tendency[flag] == -1 ) || ((value - prevValue) > 0  && tendency[flag] == 1 )  || tendency[flag] == 0){
-    return true;
-  }
-
-  return false;
-}
 double realAccX=0, realAccY=0, realAccZ=0;
-
+double dt = 0.2;
 void loop() {
  uint8_t btn = digitalRead(ButtonPin);
 
@@ -106,11 +81,6 @@ void loop() {
       debounceTime = millis();
     }
 
-
-    prevAccX = realAccX;
-    prevAccY = realAccY;
-    prevAccZ = realAccZ;
-
     mpu.getRealAcceleration(realAccX, realAccY, realAccZ, accX, accY, accZ);
     HighPassFilter_putX(&filter, realAccX );
     HighPassFilter_putY(&filter,realAccY );
@@ -120,30 +90,31 @@ void loop() {
     realAccY=HighPassFilter_getY(&filter);
     realAccZ=HighPassFilter_getZ(&filter);
     
-    velX += ((realAccX) * 0.2);
-    velY += ((realAccY) * 0.2);
-    velZ += ((realAccZ) * 0.2);
+    velX += ((realAccX) * dt);
+    velY += ((realAccY) * dt);
+    velZ += ((realAccZ) * dt);
 
-    if(mod(realAccX) < 0.1){
+    if(mabs(realAccX) < 0.1){
       velX=0;
     }
-    if(mod(realAccY) < 0.1){
+    if(mabs(realAccY) < 0.1){
       velY=0;
     }
-    if(mod(realAccZ) < 0.1){
+    if(mabs(realAccZ) < 0.1){
       velZ=0;
     }
-    posX += (velX)*0.2;
+    posX += (velX)*dt;
 
-    posY += (velY)*0.2;
+    posY += (velY)*dt;
 
-    posZ += (velZ)*0.2;
-
-    Serial.println(posY*10);
+    posZ += (velZ)*dt;
+    Serial.print(posY);
+    Serial.print(" ");
     posX = kalmanX.update(posX);
     posY = kalmanY.update(posY);
     posZ = kalmanZ.update(posZ);
-
+    double afterKalmanY = posY;
+    Serial.println(afterKalmanY);
     posXArr[i] = posX;
     posYArr[i] = posY;
     posZArr[i] = posZ;

@@ -1,6 +1,5 @@
 #ifndef HIGHPASSFILTER_H_
 #define HIGHPASSFILTER_H_
-
 /*
 
 FIR filter designed with

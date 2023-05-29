@@ -1,5 +1,5 @@
-#include "Configuire.h"
-#pragma once
+#include "Configure.h"
+
 InterfaceMPU& Config::getMPU(){
   return mpu;
 }
